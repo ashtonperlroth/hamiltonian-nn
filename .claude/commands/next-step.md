@@ -1,0 +1,1 @@
+Read the Build Order in CLAUDE.md. Check which files already exist and have real implementations (not just placeholders). Identify the next unbuilt item in the build order. Implement it fully, write tests for it, and run them. Then run /commit.

@@ -1,0 +1,34 @@
+
+{
+"permissions": {
+    "allow": [
+    "Bash(python -m pytest*)",
+    "Bash(ruff*)",
+    "Bash(black*)",
+    "Bash(git add*)",
+    "Bash(git commit*)",
+    "Bash(git push*)",
+    "Bash(git diff*)",
+    "Bash(git status*)",
+    "Bash(git log*)",
+    "Bash(pip install*)",
+    "Bash(python -c*)",
+    "Bash(cat*)",
+    "Bash(ls*)",
+    "Bash(find*)"
+    ]
+},
+"hooks": {
+    "PostToolUse": [
+    {
+        "matcher": "Write|Edit",
+        "hooks": [
+        {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATHS\" | grep -q '\\.py$'; then black --quiet $CLAUDE_FILE_PATHS 2>/dev/null; ruff check --fix --quiet $CLAUDE_FILE_PATHS 2>/dev/null; fi"
+        }
+        ]
+    }
+    ]
+}
+}
