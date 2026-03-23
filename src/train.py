@@ -19,13 +19,13 @@ from src.hnn import HNN
 from src.systems import SYSTEMS, generate_trajectories
 
 
-def make_dataset(system_name, n_trajectories=30, noise_std=0.01, seed=42):
+def make_dataset(system_name, n_trajectories=50, noise_std=0.0, seed=42):
     """Generate training data and return as TensorDatasets."""
     data = generate_trajectories(
         system_name,
         n_trajectories=n_trajectories,
-        t_span=(0, 10),
-        dt=0.1,
+        t_span=(0, 20),
+        dt=0.05,
         noise_std=noise_std,
         rng=seed,
     )

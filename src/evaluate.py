@@ -23,8 +23,14 @@ from src.hnn import HNN
 from src.systems import SYSTEMS
 
 
+def _eval_model(model, x_tensor):
+    """Evaluate model derivatives, handling HNN's autograd requirement."""
+    with torch.enable_grad():
+        return model(x_tensor).detach().squeeze(0)
+
+
 def rollout(model, x0, dt, n_steps):
-    """Integrate a trajectory using leapfrog with the learned model.
+    """Integrate a trajectory using RK4 with the learned model.
 
     Args:
         model: HNN or BaselineMLP that predicts (dq/dt, dp/dt).
@@ -36,33 +42,16 @@ def rollout(model, x0, dt, n_steps):
     """
     model.eval()
     traj = [x0.detach().numpy().copy()]
-    x = x0.clone().detach().float().unsqueeze(0)
-
-    dof = x.shape[1] // 2
+    x = x0.clone().detach().float()
 
     for _ in range(n_steps):
-        with torch.enable_grad():
-            dxdt = model(x).detach().squeeze(0)
+        k1 = _eval_model(model, x.unsqueeze(0))
+        k2 = _eval_model(model, (x + 0.5 * dt * k1).unsqueeze(0))
+        k3 = _eval_model(model, (x + 0.5 * dt * k2).unsqueeze(0))
+        k4 = _eval_model(model, (x + dt * k3).unsqueeze(0))
 
-        # Leapfrog / Störmer-Verlet step
-        # Half step in p
-        q = x[0, :dof]
-        p = x[0, dof:]
-        dqdt = dxdt[:dof]
-        dpdt = dxdt[dof:]
-
-        p_half = p + 0.5 * dt * dpdt
-        q_new = q + dt * dqdt
-
-        # Re-evaluate derivatives at (q_new, p_half)
-        x_mid = torch.cat([q_new, p_half]).unsqueeze(0)
-        with torch.enable_grad():
-            dxdt_mid = model(x_mid).detach().squeeze(0)
-
-        p_new = p_half + 0.5 * dt * dxdt_mid[dof:]
-
-        x = torch.cat([q_new, p_new]).unsqueeze(0)
-        traj.append(x.detach().squeeze(0).numpy().copy())
+        x = x + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+        traj.append(x.detach().numpy().copy())
 
     return np.array(traj)
 
